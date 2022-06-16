@@ -11,18 +11,13 @@ stateful_iter = Iterators.Stateful(hyperedges)
 ##
 function divide_dictionary(dictionary, hno, coreno)
     stateful_iter = Iterators.Stateful(dictionary)
-    array_of_dicts = []
     elms_per_dict = ceil(hno / coreno)
     maxiter = floor(length(dictionary) / (elms_per_dict))
 
-    for _ in 1:maxiter
-        args = Dict(popfirst!(stateful_iter) for _ in 1:elms_per_dict)
-        println(args)
-        push!(array_of_dicts, args)
-    end
-    remainingno = length(stateful_iter)
-    args = Dict(popfirst!(stateful_iter) for _ in 1:remainingno)
+    array_of_dicts = [Dict(popfirst!(stateful_iter) for _ in 1:elms_per_dict) for _ in 1:maxiter]
+    args = Dict(stateful_iter)
     push!(array_of_dicts, args)
+
     return array_of_dicts
 end
 
