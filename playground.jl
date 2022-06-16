@@ -1,21 +1,36 @@
 
-# # using Base
-# print("THrORNS")
+println(@__MODULE__)
+import Pkg;
+Pkg.add("ImageShow");
+import Pkg;
+Pkg.add("Colors");
+using ImageShow, Colors
 
-# ##
-# struct BarPNG end
-# Base.show(io::IO, ::MIME"image/png", ::BarPNG) = print(io, read(joinpath(@__DIR__, "assets", "jungseohyun.webp"), String))
 
-import Fatou
-using PyPlot
-c = -0.06 + 0.67im
-nf = Fatou.juliafill(:(z^2 + $c), ∂=[-1.5, 1.5, -1, 1], N=80, n=1501, cmap="gnuplot", iter=true)
-nf
+function mandel(z; maxiter=100)
+    c = z
+    for n in 1:maxiter
+        if abs(z) > 2
+            return (n - 1) / maxiter
+        end
+        z = z^2 + c
+    end
+    return 1
+end
 
-pygui(false)
-figure()
-plot(Fatou.fatou(nf), bare=true)
-display(gcf())
+to_color(x) = Gray(1 - x)
 
-##
+domain(step=0.1) = (-2.5:step:1) .- ((-1.5:step:1.5)im)'
+
+
+function make_mandel(vals)
+
+    c = to_color.(mandel.(vals))
+    return c
+end
+step = 0.005
+length(domain(step))
+
+make_mandel(domain(step))
+
 
