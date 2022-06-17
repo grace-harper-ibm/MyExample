@@ -67,14 +67,56 @@ to_merge_channel = Channel{Dict{NTuple{hlen,Int64},Float64}}(32);
 function build_mini_distributions(c::Channel)
     mini_dicts = divide_dictionary(hyperedges, hno, coreno)
     @floop for (indx, mini_dict) in enumerate(mini_dicts)
-        println(indx)
         put!(c, build_distribution(mini_dict))
+    end
+    sleep(10)
+    close(c)
+
+end
+
+#     mini_dicts = divide_dictionary(hyperedges, hno, coreno)
+# function build_mini_distributions_channel(mini_dicts)
+#     ch = Channel{Any}()
+#     @floop for (indx, mini_dict) in enumerate(mini_dicts)
+#         put!(ch, build_distribution(mini_dict))
+#     end
+# end
+
+function merge_two_dicts(dict1, dict2)
+    merged = typeof(dict1)()
+    for (k1, v1) in dict1
+        for (k2, v2) in dict2
+            new_key = tuple([id1^id2 for (id1, id2) in zip(k1, k2)]...)
+            if new_key
+                not in keys(merged)
+                merged[new_key] = v1 * v2
+            else
+                merged[new_key] += v1 * v2
+            end
+        end
+    end
+    return merged
+end
+
+
+input_args = []
+to_merge_dict_chan = []
+
+# try making this async, putting stuff into to_merge_dict_chan and later ...
+for distr in Channel(build_mini_distributions)
+    if length(input_args) < 2
+        push!(input_args, distr)
+    else
+        push!(to_merge_dict_chan, merge_two_dicts(args...))  # TODO make this async 
+        input_args = []
+
     end
 end
 
-for distr in Channel(build_mini_distributions)
-    println(distr)
-end
+# ... have this function also async, puling from to_merge_dict, 
+# see if make closing of (to_merge_dict_chan) based on (closing(Channel(build_mini_distribution)) and merge_)...
+
+# Maybe instead just creating channels until you get a channel that closes having produced only 1 dict? 
 
 
 # TODO probably need to find a way to not "pass" matrices but to lock the reference 
@@ -82,3 +124,32 @@ end
 
 
 
+
+
+
+t = @task begin
+    sleep(10)
+    println("TASKING")
+end
+
+t1 = @task begin
+    sleep(1)
+    for i in 1:20
+        sleep(1)
+        println("running: ", i)
+    end
+end
+
+@async begin
+    print("in my head")
+    for i in 1:10
+        print(i, " ")
+    end
+end
+
+for i in 1:10
+    @async begin
+        sleep(5)
+        println("I've got to go! ")
+    end
+end
