@@ -22,32 +22,46 @@ end
 mini_dicts = divide_dictionary(hyperedges, hno, coreno)
 
 
-function fake_build_distribution(dictionary, i)
-    println("length of dictionary is: $(length(dictionary))")
-    print(i)
-    return dictionary
+# TODO: We could simplify the API here, because reusing dict doesnt work
+# and is unlikely to help much anyway.
+function update(distribution, hyperedge)
+    (v, p) = hyperedge
+    newdict = typeof(distribution)()
+    for (hedge, opval) in distribution
+        # don't add
+        if hedge in keys(newdict)
+            newdict[hedge] += opval * (1 - p)
+        else
+            newdict[hedge] = opval * (1 - p)
+        end
+
+        # add 
+        newk = tuple([(hedge[i] + v[i]) % 2 for i in 1:length(hedge)]...)
+
+        if newk in keys(newdict)
+            newdict[newk] += opval * p
+        else
+            newdict[newk] = opval * p
+        end
+    end
+    return newdict
 end
-fake_channel = []
+
+
+function build_distribution(mini_dictionary)
+    distribution = Dict(tuple(zeros(hlen)...) => 1.0)
+    for (hyperedge, prob) in mini_dictionary
+        distribution = update(distribution, (hyperedge, prob))
+    end
+    return distribution
+end
+
+hlen = 2
+test_dict = Dict(zeros(hlen) => 0.5, ones(hlen) => 0.5, (1, 0) => 0.5)
+
+println(build_distribution(test_dict))
 
 using FLoops
-
-ys = zeros(8)
-xs = [i for i in 1:8]
-function f(x)
-    sleep(5)
-    println("hello", x)
-    return x^2
-end
-@floop for i in eachindex(ys, xs)
-    ys[i] = f(xs[i])
-end
-print(ys)
-
-@floop for i in 1:10
-    sleep(1)
-    println(i)
-end
-
 
 const to_merge_channel = Channel{Dict{NTuple{hlen,Int64},Float64}}(32);
 
