@@ -18,8 +18,9 @@ function divide_dictionary(dictionary, hno, coreno) #unimportant for here but in
 end
 
 
+
 # pull from channel every two and start a new thread merging them until channel is empty and all other threads have died 
-mini_dicts = divide_dictionary(hyperedges, hno, coreno)
+
 
 
 # TODO: We could simplify the API here, because reusing dict doesnt work
@@ -57,25 +58,23 @@ function build_distribution(mini_dictionary)
 end
 
 hlen = 2
-test_dict = Dict(zeros(hlen) => 0.5, ones(hlen) => 0.5, (1, 0) => 0.5)
-
-println(build_distribution(test_dict))
+test_mini = [Dict(zeros(hlen) => 0.5, ones(hlen) => 0.5, (1, 0) => 0.5) for _ in 1:12]
 
 using FLoops
+to_merge_channel = Channel{Dict{NTuple{hlen,Int64},Float64}}(32);
 
-const to_merge_channel = Channel{Dict{NTuple{hlen,Int64},Float64}}(32);
 
-@floop for (indx, mini_dict) in enumerate(mini_dicts)
-    println(indx)
-    put!(to_merge_channel, fake_build_distribution(mini_dict, indx))
+function build_mini_distributions(c::Channel)
+    mini_dicts = divide_dictionary(hyperedges, hno, coreno)
+    @floop for (indx, mini_dict) in enumerate(mini_dicts)
+        println(indx)
+        put!(c, build_distribution(mini_dict))
+    end
 end
 
-
-print(to_merge_channel)
-for elm in to_merge_channel
-    print(elm)
+for distr in Channel(build_mini_distributions)
+    println(distr)
 end
-
 
 
 # TODO probably need to find a way to not "pass" matrices but to lock the reference 
