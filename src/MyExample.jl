@@ -64,17 +64,10 @@ end
 
 
 mini_dicts = divide_dictionary(hyperedges, hno, coreno)
-function build_mini_distributions_channel(mini_dicts, ch)
-    @floop for (indx, mini_dict) in enumerate(mini_dicts)
-        put!(ch, build_distribution(mini_dict))
-    end
-    close(ch)
-end
 
 
-mini_distr_ch = Channel{Dict}(30)
-task = @async build_mini_distributions_channel(mini_dicts, mini_distr_ch)
-errormonitor(task)
+
+
 
 
 
@@ -106,8 +99,49 @@ end
 
 
 
-###########
 
+
+
+
+
+
+# continully pull from merge, async merge + put, 
+
+
+
+# TODO test for remaining lone input_arg
+
+# binding multiple tasks to a single channel
+
+
+test_mini = [Dict(zeros(hlen) => 0.5, ones(hlen) => 0.5, (1, 0) => 0.5) for _ in 1:12]
+
+
+
+
+
+
+
+
+
+
+############## for more complicated parallelism 
+##################### DIVIDING and CHANNELING original hyperedges
+function build_mini_distributions_channel(mini_dicts, ch)
+    @floop for (indx, mini_dict) in enumerate(mini_dicts)
+        put!(ch, build_distribution(mini_dict))
+    end
+    close(ch)
+end
+mini_distr_ch = Channel{Dict}(30)
+task = @async build_mini_distributions_channel(mini_dicts, mini_distr_ch)
+errormonitor(task)
+
+#################### ONGOING MERGING PIECES 
+# Hacky way to make sure channel closes when all threads finish
+
+
+### PRIMARY FLOW  
 input_args = []
 to_merge_channel = Channel{Dict{NTuple{hlen,Int64},Float64}}(32);
 thread_channel = Channel()
@@ -124,9 +158,26 @@ for distr in mini_distr_ch
         input_args = []
     end
 end
-if len(input_args > 0)
+
+if len(input_args > 0) # needn't worry about channel closing early bc that's not kicked off until continual_merging is called. 
     put!(to_merge_channel, input_args[0])
 end
+
+final_distribution = continual_merging()
+
+
+
+function close_merge_channel()
+    while (!isempty(mini_dict_chan))
+    end
+    while !isempty(thread_channel)
+        wait(take!(thread_channel))
+    end
+    # mini_dict_chan is empty and thrad_channel is empty 
+    close(thread_channel)
+    close(to_merge_channel)
+end
+
 
 function continual_merging()
     future_end = close_merge_channel()
@@ -151,17 +202,6 @@ function continual_merging()
 
 end
 
-# Hacky way to make sure channel closes when all threads finish
-function close_merge_channel()
-    while (!isempty(mini_dict_chan))
-    end
-    while !isempty(thread_channel)
-        wait(take!(thread_channel))
-    end
-    # mini_dict_chan is empty and thrad_channel is empty 
-    close(thread_channel)
-    close(to_merge_channel)
-end
 
 function finish_merging(to_merge_channel::Channel)
     if isempty(to_merge_channel)
@@ -172,17 +212,23 @@ end
 
 
 
-
-# continully pull from merge, async merge + put, 
-
+############## for more complicated parallelism 
 
 
-# TODO test for remaining lone input_arg
-
-# binding multiple tasks to a single channel
 
 
-test_mini = [Dict(zeros(hlen) => 0.5, ones(hlen) => 0.5, (1, 0) => 0.5) for _ in 1:12]
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
