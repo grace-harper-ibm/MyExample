@@ -3,7 +3,7 @@ using Test
 
 @testset "MyExample.jl" begin
     # Write your tests here.
-    @testset begin
+    @testset "divide_dictionary" begin
         function check_division(dictionary, hno, coreno, size1, size2)
             res = MyExample.divide_dictionary(dictionary, hno, coreno)
 
@@ -23,7 +23,6 @@ using Test
             for hdict in res
                 hlen = length(hdict)
                 num_tot += hlen
-                println("hlen: $(hlen) w/ size1: $(size1), and size2: $(size2)")
                 @test hlen == size1 || hlen == size2
                 # test that correct values for keys were kept 
                 for h in keys(hdict)
@@ -45,6 +44,42 @@ using Test
         check_division(dictionary, 4, 2, 2, 2)
         check_division(dictionary, 4, 1, 4, 4)
     end
+
+    @testset "update" begin
+        init_distribution = Dict((0, 0) => 1.0)
+        hyperedge1 = ((0, 1.0), 0.5)
+        distribution2 = MyExample.update(init_distribution, hyperedge1)
+
+        @test distribution2 == Dict((0, 1) => 0.5, (0, 0) => 0.5)
+
+        hyperedge2 = ((1, 1), 0.25)
+        distribution3 = MyExample.update(distribution2, hyperedge2)
+        @test distribution3 == Dict(
+            (0, 1) => 0.375,
+            (1, 0) => 0.125,
+            (1, 1) => 0.125,
+            (0, 0) => 0.375
+        )
+
+        # Test an example where a hyperedge generates a preexisting key 
+        hyperedge1_repeat = ((0, 1.0), 0.5)
+        distribution4 = MyExample.update(distribution2, hyperedge1_repeat)
+        @test distribution4 == Dict(
+            (0, 0) => 0.5,
+            (0, 1) => 0.5
+        )
+
+
+
+
+
+        # they get added together 
+
+
+
+
+    end
+
 end
 
 
