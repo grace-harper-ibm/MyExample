@@ -52,18 +52,19 @@ function build_distribution(mini_dictionary)
     end
     return distribution
 end
-function build_mini_distributions(c::Channel)
-    mini_dicts = divide_dictionary(hyperedges, hno, coreno)
-    @floop for (indx, mini_dict) in enumerate(mini_dicts)
-        put!(c, build_distribution(mini_dict))
-    end
-    sleep(10)
-    close(c)
-
-end
 
 
 mini_dicts = divide_dictionary(hyperedges, hno, coreno)
+# technically works but no one can pull from channel until end of floops 
+mini_dicts = divide_dictionary(hyperedges, hno, coreno)
+
+function build_mini_distribution_array(mini_dicts)
+    mini_distributions = typeof(mini_dicts)() # is it faster to instantiate this outside of function and pass reference to?
+    @floop for (indx, mini_dict) in enumerate(mini_dicts)
+        mini_distributions[indx] = build_distribution(mini_dict)
+    end
+    return mini_distributions
+end
 
 
 
@@ -71,18 +72,15 @@ mini_dicts = divide_dictionary(hyperedges, hno, coreno)
 
 
 
-# ... have this function also async, puling from to_merge_dict, 
-# see if make closing of (to_merge_dict_chan) based on (closing(Channel(build_mini_distribution)) and all threads using merge channel finished)...
-# TODO probably need to find a way to not "pass" matrices but to lock the reference 
+
 
 
 function merge_two_dicts(dict1, dict2)
     merged = typeof(dict1)()
     for (k1, v1) in dict1
         for (k2, v2) in dict2
-            new_key = tuple([id1^id2 for (id1, id2) in zip(k1, k2)]...)
-            if new_key
-                not in keys(merged)
+            new_key = tuple([(id1 + id2) % 2 for (id1, id2) in zip(k1, k2)]...)
+            if !(new_key in keys(merged))
                 merged[new_key] = v1 * v2
             else
                 merged[new_key] += v1 * v2
@@ -93,7 +91,23 @@ function merge_two_dicts(dict1, dict2)
 end
 
 
-
+# 00 
+hlen = 3
+test_mini = [Dict(tuple(zeros(hlen)...) => 1.0), Dict(tuple(ones(hlen)...) => 0.5, tuple(zeros(hlen)...) => 0.5)]
+@views function merge_distribution(mini_distributions)
+    if length(mini_distributions) == 1
+        return mini_distributions[1]
+    elseif length(mini_distributions) == 2
+        return merge_two_dicts(mini_distributions[1], mini_distributions[2])
+    else
+        mid = length(mini_distributions) // 2
+        m1 = merge_distribution_parallel(mini_distributions[1:mid])
+        m2 = merge_distribution_parallel(mini_distributions[mid:end])
+        return merge_two_dicts(m1, m2)
+    end
+end
+new_distr = merge_distribution(test_mini)
+print(new_distr)
 # TO begin with, might make more sense to just wait for original mini_distributions to finish into an array (wait on threads) then mergesort 
 
 
@@ -127,6 +141,17 @@ test_mini = [Dict(zeros(hlen) => 0.5, ones(hlen) => 0.5, (1, 0) => 0.5) for _ in
 
 ############## for more complicated parallelism 
 ##################### DIVIDING and CHANNELING original hyperedges
+
+function build_mini_distributions(c::Channel)
+    mini_dicts = divide_dictionary(hyperedges, hno, coreno)
+    @floop for (indx, mini_dict) in enumerate(mini_dicts)
+        put!(c, build_distribution(mini_dict))
+    end
+    sleep(10)
+    close(c)
+
+end
+
 function build_mini_distributions_channel(mini_dicts, ch)
     @floop for (indx, mini_dict) in enumerate(mini_dicts)
         put!(ch, build_distribution(mini_dict))
@@ -140,8 +165,12 @@ errormonitor(task)
 #################### ONGOING MERGING PIECES 
 # Hacky way to make sure channel closes when all threads finish
 
-
 ### PRIMARY FLOW  
+# ... have this function also async, puling from to_merge_dict, 
+# see if make closing of (to_merge_dict_chan) based on (closing(Channel(build_mini_distribution)) and all threads using merge channel finished)...
+# TODO probably need to find a way to not "pass" matrices but to lock the reference
+
+
 input_args = []
 to_merge_channel = Channel{Dict{NTuple{hlen,Int64},Float64}}(32);
 thread_channel = Channel()
@@ -325,3 +354,25 @@ end
 
 
 
+
+
+
+# view fun 
+
+@views function changeme(arr)
+    if length(arr) == 1
+        arr[1] = "CHANGED"
+        return "cheese"
+    end
+    arr[1] = "changing"
+    return changeme(arr[2:end])
+end
+
+
+math = []
+for i in 2:7
+    push!(math, i)
+end
+push!(math, 1)
+@views changeme((math[1:end]))
+println(math)

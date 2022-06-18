@@ -4,11 +4,10 @@ using Test
 @testset "myf.jl" begin
     # Write your tests here.
 
-    @test MyExample.myf(2, 1) == 7
-    @test MyExample.myf(2, 2) == 10
-end
+    # TEST merge dicts 
 
-@testset "Derivatives test" begin
-    @test MyExample.deriv_my_f(2, 1) = 2
+    # TEST mini dict 
+
+    # TEST full process 
 
 end
