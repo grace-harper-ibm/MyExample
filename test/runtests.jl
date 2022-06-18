@@ -47,7 +47,7 @@ using Test
 
     @testset "update" begin
         init_distribution = Dict((0, 0) => 1.0)
-        hyperedge1 = ((0, 1.0), 0.5)
+        hyperedge1 = ((0, 1), 0.5)
         distribution2 = MyExample.update(init_distribution, hyperedge1)
 
         @test distribution2 == Dict((0, 1) => 0.5, (0, 0) => 0.5)
@@ -68,19 +68,58 @@ using Test
             (0, 0) => 0.5,
             (0, 1) => 0.5
         )
+    end
 
 
+    @testset "test build_distribution" begin
+        hyperedges = Dict(
+            (0, 1) => 0.5,
+            (1, 1) => 0.25
+        )
+        distribution = Dict(
+            (0, 1) => 0.375,
+            (1, 0) => 0.125,
+            (1, 1) => 0.125,
+            (0, 0) => 0.375
+        )
 
+        @test MyExample.build_distribution(hyperedges, 2) == distribution
 
+        hyperedges2 = Dict(
+            (0, 1) => 0.1,
+            (1, 0) => 0.2,
+            (1, 1) => 0.3
+        )
 
-        # they get added together 
+        distribution2 = Dict(
+            (1, 1) => 0.23,
+            (1, 0) => 0.156,
+            (0, 1) => 0.11,
+            (0, 0) => 0.504
+        )
 
-
+        @test MyExample.build_distribution(hyperedges2, 2) == distribution2
 
 
     end
+    # TEST build distribution 
+
+    # TEST build_mini_distribution_array (using build_distribution)
+
+    # TEST merge 2 dicts 
+
+    # TEST merge distribution 
+
+    # TEST full run 
+
+
+    # they get added together 
+
+
+
 
 end
+
 
 
 

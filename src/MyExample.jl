@@ -38,23 +38,24 @@ function update(distribution, hyperedge)
             newdict[newk] = opval * p
         end
     end
+    println("mynewixts: ", newdict)
     return newdict
 end
-function build_distribution(mini_dictionary)
-    distribution = Dict(tuple(zeros(hlen)...) => 1.0)
+function build_distribution(mini_dictionary, hyperedge_length)
+    distribution = Dict(tuple(zeros(hyperedge_length)...) => 1.0)
     for (hyperedge, prob) in mini_dictionary
         distribution = update(distribution, (hyperedge, prob))
     end
     return distribution
 end
 
-function build_mini_distribution_array(mini_dicts)
+function build_mini_distribution_array(mini_dicts, hyperedge_length)
     if length(mini_dicts) == 0
         return []
     end
     mini_distributions = similar(mini_dicts, length(mini_dicts))# is it faster to instantiate this outside of function and pass reference to?
     @floop for (indx, mini_dict) in enumerate(mini_dicts)
-        mini_distributions[indx] = build_distribution(mini_dict)
+        mini_distributions[indx] = build_distribution(mini_dict, hyperedge_length)
     end
     return mini_distributions
 end
