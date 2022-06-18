@@ -1,16 +1,20 @@
 # I'm frsher than a - 
 
+module (MyExample)
 using FLoops
+using Revise
 
 # section hyperedges into groups of hlen/no_cores & put results distributions in a channel
 function divide_dictionary(dictionary, hno, coreno) #TODO unimportant for here but in the future,  anyway to yield dictionary instead of literally copying the whole thing? 
     stateful_iter = Iterators.Stateful(dictionary)
-    elms_per_dict = ceil(hno / coreno)
+    elms_per_dict = ceil(hno / coreno) # TODO how much can this inexact mess us up?
     maxiter = floor(length(dictionary) / (elms_per_dict))
 
     array_of_dicts = [Dict(popfirst!(stateful_iter) for _ in 1:elms_per_dict) for _ in 1:maxiter]
     args = Dict(stateful_iter)
-    push!(array_of_dicts, args)
+    if length(args) != 0
+        push!(array_of_dicts, args)
+    end
 
     return array_of_dicts
 end
@@ -270,7 +274,6 @@ mini_distr_array = build_mini_distribution_array(mini_dicts)
 # # for i in c
 # #     @show i
 # # end
-
 # # ########### why 
 
 
@@ -338,3 +341,6 @@ mini_distr_array = build_mini_distribution_array(mini_dicts)
 # push!(math, 1)
 # @views changeme((math[1:end]))
 # println(math)
+
+
+end
