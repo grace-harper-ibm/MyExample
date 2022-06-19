@@ -72,6 +72,7 @@ using Test
 
 
     @testset "test build_distribution" begin
+        print("ONE ")
         hyperedges = Dict(
             (0, 1) => 0.5,
             (1, 1) => 0.25
@@ -93,12 +94,13 @@ using Test
 
         distribution2 = Dict(
             (1, 1) => 0.23,
-            (1, 0) => 0.156,
+            (1, 0) => 0.15,
             (0, 1) => 0.11,
-            (0, 0) => 0.504
+            (0, 0) => 0.51
         )
-
+        println("TWO")
         @test MyExample.build_distribution(hyperedges2, 2) == distribution2
+
 
 
     end

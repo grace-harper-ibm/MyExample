@@ -20,31 +20,32 @@ function divide_dictionary(dictionary, hno, coreno) #TODO unimportant for here b
 end
 function update(distribution, hyperedge)
     (v, p) = hyperedge
+
     newdict = typeof(distribution)()
     for (hedge, opval) in distribution
         # don't add
         if hedge in keys(newdict)
-            newdict[hedge] += opval * (1 - p)
+            newdict[hedge] += round(opval * (1 - p), digits=6)
         else
-            newdict[hedge] = opval * (1 - p)
+            newdict[hedge] = round(opval * (1 - p), digits=6)
         end
-
         # add 
         newk = tuple([(hedge[i] + v[i]) % 2 for i in 1:length(hedge)]...)
 
         if newk in keys(newdict)
-            newdict[newk] += opval * p
+            newdict[newk] += round(opval * p, digits=6)
         else
-            newdict[newk] = opval * p
+            newdict[newk] = round(opval * p, digits=6)
         end
     end
-    println("mynewixts: ", newdict)
+
     return newdict
 end
 function build_distribution(mini_dictionary, hyperedge_length)
     distribution = Dict(tuple(zeros(hyperedge_length)...) => 1.0)
     for (hyperedge, prob) in mini_dictionary
         distribution = update(distribution, (hyperedge, prob))
+        println("mydistribution:$(distribution)")
     end
     return distribution
 end
@@ -89,15 +90,21 @@ end
 end
 
 
-hlen = 9
-hno = 10
-coreno = 4
-hyperedges = Dict(tuple(rand([0, 1], 1, hlen)...) => rand() for _ in 1:hno)
+# hlen = 9
+# hno = 10
+# coreno = 4
+# hyperedges = Dict(tuple(rand([0, 1], 1, hlen)...) => rand() for _ in 1:hno)
 
-mini_dicts = divide_dictionary(hyperedges, hno, coreno)
-mini_distr_array = build_mini_distribution_array(mini_dicts)
-@views new_distr = merge_distribution(mini_distr_array[1:end])
+# mini_dicts = divide_dictionary(hyperedges, hno, coreno)
+# mini_distr_array = build_mini_distribution_array(mini_dicts)
+# @views new_distr = merge_distribution(mini_distr_array[1:end])
 
+hyperedges2 = Dict(
+    (0, 1) => 0.1,
+    (1, 0) => 0.2,
+    (1, 1) => 0.3
+)
+build_distribution(hyperedges2, 2)
 
 
 # test_mini = [Dict(tuple(zeros(hlen)...) => 1.0), Dict(tuple(ones(hlen)...) => 0.5, tuple(zeros(hlen)...) => 0.5), Dict(tuple(zeros(hlen)...) => 1.0)]
