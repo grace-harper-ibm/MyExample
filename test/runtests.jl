@@ -104,7 +104,39 @@ using Test
 
 
     end
-    # TEST build distribution 
+
+    @testset "build_mini_distribution_array" begin
+        mini_dicts = [
+            Dict(
+                (0, 1) => 0.5,
+                (1, 1) => 0.25
+            ),
+            Dict(
+                (0, 1) => 0.1,
+                (1, 0) => 0.2,
+                (1, 1) => 0.3
+            )
+        ]
+
+        distribution = Dict(
+            (0, 1) => 0.375,
+            (1, 0) => 0.125,
+            (1, 1) => 0.125,
+            (0, 0) => 0.375
+        )
+        distribution2 = Dict(
+            (1, 1) => 0.23,
+            (1, 0) => 0.15,
+            (0, 1) => 0.11,
+            (0, 0) => 0.51
+        )
+
+        mini_distribution_arry = MyExample.build_mini_distribution_array(mini_dicts, 2)
+        for distr in mini_distribution_arry
+            @test distr == distribution || distr == distribution2
+        end
+
+    end
 
     # TEST build_mini_distribution_array (using build_distribution)
 
