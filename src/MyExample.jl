@@ -67,9 +67,10 @@ function merge_two_dicts(dict1, dict2)
         for (k2, v2) in dict2
             new_key = tuple([(id1 + id2) % 2 for (id1, id2) in zip(k1, k2)]...)
             if !(new_key in keys(merged))
-                merged[new_key] = v1 * v2
+                #  round(opval * (1 - p), digits=6)
+                merged[new_key] = round(v1 * v2, digits=6)
             else
-                merged[new_key] += v1 * v2
+                merged[new_key] += round(v1 * v2, digits=6)
             end
         end
     end
@@ -98,15 +99,6 @@ end
 # mini_dicts = divide_dictionary(hyperedges, hno, coreno)
 # mini_distr_array = build_mini_distribution_array(mini_dicts)
 # @views new_distr = merge_distribution(mini_distr_array[1:end])
-
-hyperedges2 = Dict(
-    (0, 1) => 0.1,
-    (1, 0) => 0.2,
-    (1, 1) => 0.3
-)
-build_distribution(hyperedges2, 2)
-
-
 # test_mini = [Dict(tuple(zeros(hlen)...) => 1.0), Dict(tuple(ones(hlen)...) => 0.5, tuple(zeros(hlen)...) => 0.5), Dict(tuple(zeros(hlen)...) => 1.0)]
 
 
